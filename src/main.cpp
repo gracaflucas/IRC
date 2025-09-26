@@ -10,7 +10,7 @@
 #include "../include/Server.hpp"
 #include "../include/utils.hpp"
 
-int main(int argc, char **argv) {
+/* int main(int argc, char **argv) {
     if (argc != 3) {
         std::cout << "Try ./ircserv <port> <password>" << std::endl;
         return (1);
@@ -28,4 +28,28 @@ int main(int argc, char **argv) {
     //           << " with password [" << password << "]" << std::endl;
 
     return (0);
+} */
+
+#include "../include/Channel.hpp"
+#include "../include/Client.hpp"
+#include <iostream>
+
+int main() {
+    // Simular sockets apenas como números fictícios
+    Client alice(1, "alice_host");
+    Client bob(2, "bob_host");
+
+    Channel general("general");
+
+    general.addMember(&alice);
+    general.addMember(&bob);
+
+    // Alice envia mensagem
+    general.sendMessageToAll("Olá, pessoal!", &alice);
+
+    // Tornar Alice operador
+    general.grantOperator(&alice);
+    std::cout << "Alice é operador? " << general.isOperator(&alice) << std::endl;
+
+    return 0;
 }

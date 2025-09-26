@@ -1,7 +1,8 @@
 NAME = ircserv
 
 SRC_DIR = src
-SRC = $(SRC_DIR)/main.cpp  $(SRC_DIR)/Server.cpp $(SRC_DIR)/utils.cpp
+SRC = $(SRC_DIR)/main.cpp  $(SRC_DIR)/Server.cpp $(SRC_DIR)/utils.cpp\
+$(SRC_DIR)/Channel.cpp $(SRC_DIR)/Client.cpp
 OBJ = $(SRC:.cpp=.o)
 
 CC = c++
