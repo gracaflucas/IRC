@@ -7,8 +7,8 @@
 #include <signal.h> // signal, sigaction
 #include <fcntl.h> // fcntl
 #include <poll.h> // poll
-#include "./include/Server.hpp"
-#include "./include/utils.hpp"
+#include "../include/Server.hpp"
+#include "../include/utils.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 3) {
@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
         return (1);
     }
 
+    (void)argv;
     // validate arguments
     // port is at least 1 character (digit), between 1 and 65535 (16 bits unsigned)
     // password is at least 1 character, can contain any printable characters
