@@ -1,6 +1,7 @@
 NAME = ircserv
 SRC =	./src/main.cpp \
-		./src/Server.cpp
+		./src/Server.cpp \
+		./src/utils.cpp
 OBJ = $(SRC:.cpp=.o)
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
