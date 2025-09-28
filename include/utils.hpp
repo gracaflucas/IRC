@@ -1,11 +1,11 @@
 #ifndef UTILS_HPP
 # define UTILS_HPP
 
-#include <iostream>
-#include <cstdlib>
+#include <cstdlib> // strtol
+#include <stdexcept>
 
-int parsePort(std::string rawPort);
+int parsePort(const std::string &rawPort);
 
-std::string parsePassword(std::string rawPassword);
+std::string parsePassword(const std::string &rawPassword);
 
 #endif

@@ -15,18 +15,16 @@
         std::cout << "Try ./ircserv <port> <password>" << std::endl;
         return (1);
     }
+    try {
+        int port = parsePort(argv[1]);
+        std::string password = parsePassword(argv[2]);
 
-    (void)argv;
-    // validate arguments
-    // port is at least 1 character (digit), between 1 and 65535 (16 bits unsigned)
-    // password is at least 1 character, can contain any printable characters
-
-    // int port = parsePort(argv[1]);
-    // std::string password = parsePassword(argv[2]);
-
-    // std::cout << "Starting IRC server on port " << port 
-    //           << " with password [" << password << "]" << std::endl;
-
+        std::cout << "Starting IRC server on port " << port 
+                  << " with password [" << password << "]" << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return (1);
+    }
     return (0);
 } */
 
