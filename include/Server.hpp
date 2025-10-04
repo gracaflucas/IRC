@@ -2,7 +2,6 @@
 # define SERVER_HPP
 
 #include <iostream>
-#include <cstdio>
 #include <cstring>
 #include <unistd.h> // close, lseek
 #include <sys/stat.h> // fstat
@@ -29,6 +28,7 @@ class Server {
         std::vector<struct pollfd>  _pollfds;
         std::map<int, Client *>     _clients;
         struct sockaddr_in          _address;
+        bool                        _isShuttingDown;
 
     public:
         Server();

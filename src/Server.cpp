@@ -94,8 +94,7 @@ void Server::acceptNewClient() {
     socklen_t clientLen = sizeof(clientAddr);
     int clientFd = accept(_serverFd, (sockaddr*)&clientAddr, &clientLen);
     if (clientFd < 0) {
-        perror("accept");
-        return;
+        throw std::runtime_error("accept");
     }
 
     std::string hostname = inet_ntoa(clientAddr.sin_addr);
