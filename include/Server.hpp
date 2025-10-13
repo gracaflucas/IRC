@@ -28,7 +28,7 @@ class Server {
         std::vector<struct pollfd>  _pollfds;
         std::map<int, Client *>     _clients;
         struct sockaddr_in          _address;
-        bool                        _isShuttingDown;
+     //   bool                        _isShuttingDown;
 
     public:
         Server();
