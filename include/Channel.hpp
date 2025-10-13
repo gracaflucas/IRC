@@ -1,55 +1,52 @@
 #pragma once
-#ifndef CHANNEL_HPP
-# define CHANNEL_HPP
-
-#include <string>
-#include <vector>
+#include "Client.hpp"
 
 class Client; 
 class Server; 
 
 class Channel
 {
-private:
-    std::string _name;                   // Nome do canal
-    std::vector<Client*> _members;       // Todos os clientes que entraram
-    std::vector<Client*> _operators;     // Clientes com permissões de admin
-    std::vector<Client*> _invited;       // Lista de convidados
+	private:
+	std::string				_name;
+	std::string				_topic[3];
+	std::string				_key;
+	std::string 			_mode;
+	std::vector<int>		_channelClients;
+	std::vector<int>		_channelAdmins;
+	std::vector<int>		_channelInvites;
+	bool					_inviteOnly;
+	bool					_topicRestricted;
+	int						_userLimit;
 
-    // Modos do canal
-    bool _isInviteOnly;                  // +i: apenas convidados podem entrar
-    bool _isTopicRestricted;             // +t: apenas operadores podem mudar topic
-    int  _maxUsers;                      // +l: limite de usuários
+	public:
+		Channel(const std::string &name);
+		~Channel();
 
-public:
-    Channel(const std::string &name);
-    ~Channel();
+		//GETTERS
+		std::string	getName() const;
+		std::string	getKey() const;
+		std::string	getTopic(unsigned int index) const;
+		std::string	getMode() const;
+		std::vector<int> &getClients();
+		std::vector<int> &getAdmins();
+		std::vector<int> &getChannelInvites();
+		bool			getInviteOnly() const;
+		bool			getTopicRestricted() const;
+		int				getUserLimit() const;
 
-    // Getters
-    const std::string& getName() const;
-    const std::vector<Client*>& getMembers() const;
+	
+		//SETTERS
+		void	setName(const std::string &newName);
+		void	setTopic(const std::string &newTopic, std::string client, std::string time);
+		void	setKey(const std::string &newKey);
+		void	setMode(const std::string &newMode);
+		void	setInviteOnly(bool status);
+		void	setTopicRestricted(bool status);
+		void	setUserLimit(int limit);
 
-    // Membership
-    void addMember(Client* client);
-    void removeMember(Client* client);
-    bool hasMember(Client* client) const;
-
-    // Operator management
-    void grantOperator(Client* client);
-    void revokeOperator(Client* client);
-    bool isOperator(Client* client) const;
-
-    // Invites
-    void inviteMember(Client* client);
-    bool isInvited(Client* client) const;
-
-    // Minimal getters for modes to avoid warnings
-    bool isInviteOnly() const;
-    bool isTopicRestricted() const;
-    int  getMaxUsers() const;
-
-    // Messaging
-    void sendMessageToAll(const std::string &msg, Client* sender = 0);
+		void	addClient(Client *client);
+		void	addAdmin(Client *client);
+		void	removeAdmin(int socket);
+		void	removeClient(int socket);
+		void	addChannelInvite(const Client *client);
 };
-
-#endif

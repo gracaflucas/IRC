@@ -1,11 +1,19 @@
 #include "../include/Client.hpp"
 
-Client::Client(int socket, const std::string &hostname)
-    : _socket(socket), _hostName(hostname), _buffer(""), _isAuth(false) {}
+Client::Client(int socket, std::string &hostname) : _socket(socket), _isAuth(false), _insertPassword(false), _hostname(hostname) {}
 
 Client::~Client()
 {
-    close(_socket);
+	std::vector<Channel*> &clientChannels = this->getChannels();
+	std::vector<Channel*>::iterator it = clientChannels.begin();
+	while (it != clientChannels.end()) {
+		Channel* channel = *it;
+		channel->removeClient(this->getSocket());
+		if (this->isChannelAdmin(channel)) {
+			channel->removeAdmin(this->getSocket());
+		}
+		++it;
+	}
 }
 
 //***********GETTERS***************/
@@ -81,10 +89,26 @@ void Client::clearBuffer()
 		this->_buffer.clear();
 }
 
+Channel *Client::createChannel(const std::string &name)
+{
+	Channel *c = new Channel(name);
+	c->addClient(this);
+	c->addAdmin(this);
+	this->_channels.push_back(c);
+	return c;
+}
+
 void	Client::sendMsgToClient(Client *client, const std::string &msg) {
 		send(client->getSocket(), msg.c_str(), msg.size(), 0);
 }
 void Client::sendErrorMessage(const std::string &msg)
 {
 		send(_socket, msg.c_str(), msg.size(), 0);
+}
+
+bool	Client::isChannelAdmin(Channel *channel) {
+	std::vector<int> admins = channel->getAdmins();
+	if (std::find(admins.begin(), admins.end(), this->getSocket()) != admins.end())
+		return true;
+	return false;
 }

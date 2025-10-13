@@ -1,12 +1,12 @@
 /* 1 . Construtor e estado básico
 
-Implementar o Client(const int socket, std::string &hostname):
+Implementar o Client(const int socket, std::string &hostname): OK
 
-Guardar _socket e _hostname.
+Guardar _socket e _hostname. OK
 
-Inicializar _isAuth = false, _insertPassword = false.
+Inicializar _isAuth = false, _insertPassword = false. OK
 
-_nick, _user, _realName ficam vazios.
+_nick, _user, _realName ficam vazios. ON IT
 
 _buffer vazio.
 
@@ -56,8 +56,8 @@ class Client
 		std::vector<Channel *> _channels;
 
 	public:
-		Client(int socket, const std::string &hostname);
-		~Client();
+		 Client(const int socket, std::string &hostname);
+		 ~Client();
 
 		 //GETTERS    
 		bool insertedPass() const;
@@ -85,7 +85,8 @@ class Client
 		// Comunicação
 		void	sendErrorMessage(const std::string &msg);
 		void	sendMsgToClient(Client *client, const std::string &msg);
-		// create channel
+		Channel *createChannel(const std::string &name);
+		bool	isChannelAdmin(Channel *channel);
 };
 
 #endif

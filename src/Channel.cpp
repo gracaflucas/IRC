@@ -3,106 +3,102 @@
 #include <algorithm>
 #include <iostream> // debug
 
-Channel::Channel(const std::string &name)
-    : _name(name), _isInviteOnly(false), _isTopicRestricted(false), _maxUsers(0) {}
+Channel::Channel(const std::string &name): _name(name), _key(""), _inviteOnly(false), _topicRestricted(false), _userLimit(-1){}
 
 Channel::~Channel() {}
 
-const std::string& Channel::getName() const {
-    return _name;
+std::string	Channel::getName() const {
+	return this->_name;
 }
 
-const std::vector<Client*>& Channel::getMembers() const {
-    return _members;
+std::string	Channel::getTopic(unsigned int index) const {
+	return this->_topic[index];
 }
 
-bool Channel::isInviteOnly() const {
-    return _isInviteOnly;
+std::string	Channel::getKey() const {
+	return this->_key;
 }
 
-bool Channel::isTopicRestricted() const {
-    return _isTopicRestricted;
+std::string	Channel::getMode() const {
+	return this->_mode;
 }
 
-int Channel::getMaxUsers() const {
-    return _maxUsers;
+std::vector<int> &Channel::getClients() {
+	return this->_channelClients;
 }
 
-bool Channel::hasMember(Client* client) const {
-    std::vector<Client*>::const_iterator it;
-    for (it = _members.begin(); it != _members.end(); ++it) {
-        if (*it == client)
-            return true;
-    }
-    return false;
+std::vector<int> &Channel::getAdmins() {
+	return this->_channelAdmins;
 }
 
-void Channel::addMember(Client* client) {
-    if (hasMember(client))
-        return;
-
-    // Checa modos
-    if (_isInviteOnly && !isInvited(client))
-        return; // rejeita se canal +i
-
-    if (_maxUsers != 0 && _members.size() >= static_cast<size_t>(_maxUsers))
-        return; // rejeita se canal cheio
-
-    _members.push_back(client);
+std::vector<int> &Channel::getChannelInvites() {
+	return this->_channelInvites;
 }
 
-void Channel::removeMember(Client* client) {
-    std::vector<Client*>::iterator it;
-    for (it = _members.begin(); it != _members.end(); ++it) {
-        if (*it == client) {
-            _members.erase(it);
-            return;
-        }
-    }
+
+int	Channel::getUserLimit() const {
+	return this->_userLimit;
 }
 
-void Channel::grantOperator(Client* client) {
-    if (!isOperator(client))
-        _operators.push_back(client);
+bool	Channel::getInviteOnly() const {
+	return this->_inviteOnly;
 }
 
-void Channel::revokeOperator(Client* client) {
-    std::vector<Client*>::iterator it;
-    for (it = _operators.begin(); it != _operators.end(); ++it) {
-        if (*it == client) {
-            _operators.erase(it);
-            return;
-        }
-    }
+bool	Channel::getTopicRestricted() const {
+	return this->_topicRestricted;
 }
 
-bool Channel::isOperator(Client* client) const {
-    std::vector<Client*>::const_iterator it;
-    for (it = _operators.begin(); it != _operators.end(); ++it) {
-        if (*it == client)
-            return true;
-    }
-    return false;
+void	Channel::setName(const std::string &newName) {
+	this->_name = newName;
 }
 
-void Channel::inviteMember(Client* client) {
-    if (!isInvited(client))
-        _invited.push_back(client);
+void	Channel::setTopic(const std::string &newTopic, std::string client, std::string time) {
+	this->_topic[0] = newTopic;
+	this->_topic[1] = client;
+	this->_topic[2] = time;
 }
 
-bool Channel::isInvited(Client* client) const {
-    std::vector<Client*>::const_iterator it;
-    for (it = _invited.begin(); it != _invited.end(); ++it) {
-        if (*it == client)
-            return true;
-    }
-    return false;
+void	Channel::setKey(const std::string &newKey) {
+	this->_key = newKey;
 }
 
-void Channel::sendMessageToAll(const std::string &msg, Client* sender) {
-    std::vector<Client*>::iterator it;
-    for (it = _members.begin(); it != _members.end(); ++it) {
-        if (*it != sender)
-            (*it)->sendMsgToClient(*it, msg);
-    }
+void	Channel::setMode(const std::string &newMode) {
+	this->_mode = newMode;
 }
+
+void	Channel::setInviteOnly(bool status) {
+	this->_inviteOnly = status;
+}
+
+void	Channel::setTopicRestricted(bool status) {
+	this->_topicRestricted = status;
+}
+
+void	Channel::setUserLimit(int limit) {
+	this->_userLimit = limit;
+}
+
+void	Channel::addClient(Client *client) {
+	this->_channelClients.push_back(client->getSocket());
+	client->getChannels().push_back(this);
+}
+
+void	Channel::addAdmin(Client *client) {
+	this->_channelAdmins.push_back(client->getSocket());
+}
+
+void	Channel::removeClient(int socket) {
+	std::vector<int>::iterator it = std::find(_channelClients.begin(), _channelClients.end(), socket);
+	if (it != _channelClients.end())
+		_channelClients.erase(it);
+}
+
+void	Channel::removeAdmin(int socket) {
+	std::vector<int>::iterator it = std::find(_channelAdmins.begin(), _channelAdmins.end(), socket);
+	if (it != _channelAdmins.end())	
+		_channelAdmins.erase(it);
+}
+
+void	Channel::addChannelInvite(const Client *client){
+	this->_channelInvites.push_back(client->getSocket());
+};
