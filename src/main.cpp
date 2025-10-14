@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
         std::cerr << "Error: " << e.what() << std::endl;
         return (1);
     }
+    std::cout << "\nShutting down server..." << std::endl;
     return (0);
 }
 

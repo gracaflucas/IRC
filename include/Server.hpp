@@ -42,6 +42,8 @@ class Server {
         void    acceptNewClient();
         void    handleClientMessage(size_t index);
         void    shutdown();
+        void    tryAuthenticate(Client* client, const std::string& msg);
+
 };
 
 #endif

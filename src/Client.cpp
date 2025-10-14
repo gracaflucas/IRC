@@ -1,6 +1,6 @@
 #include "../include/Client.hpp"
 
-Client::Client(int socket, std::string &hostname) : _socket(socket), _isAuth(false), _insertPassword(false), _hostname(hostname) {}
+Client::Client(int socket, std::string &hostname) : _socket(socket), _isAuth(false), _insertPass(false), _hostName(hostname) {}
 
 Client::~Client()
 {

@@ -52,8 +52,6 @@ Server& Server::operator=(const Server& other) {
 }
 
 void    Server::shutdown() {
-    std::cout << "\nShutting down server..." << std::endl;
-
     for (size_t i = 0; i < _pollfds.size(); ++i) {
         close(_pollfds[i].fd);
     }
@@ -133,8 +131,69 @@ void Server::handleClientMessage(size_t index) {
     if (it != _clients.end()) {
         Client *c = it->second;
         c->appendBuffer(buffer);
-        std::cout << "Message from " << c->getHostname()
-                  << ": " << c->getBuffer();
+        if (!c->isAuth())
+            tryAuthenticate(c, c->getBuffer());
+        else {
+            std::cout << "Message from " << c->getHostname()
+                      << ": " << c->getBuffer();
+        }
         c->clearBuffer();
+    }
+}
+
+void Server::tryAuthenticate(Client* client, const std::string& msg) {
+    std::istringstream iss(msg);
+    std::string line;
+    while (std::getline(iss, line)) {
+        if (!line.empty() && line[line.size() - 1] == '\r')
+            line.erase(line.size() - 1);
+        if (line.find("PASS") == 0) {
+            std::string pass = line.substr(5);
+            if (pass == _password) {
+                client->setInsertPass(true);
+                client->sendMsgToClient(client, ":server NOTICE * :Password accepted\r\n");
+            }
+            else {
+                client->sendErrorMessage(":server 464 * :Password incorrect\r\n");
+                client->sendMsgToClient(client, ":server NOTICE * :Invalid password\r\n");
+                // qual nossa politica para password incorreta? disconnect? tentativas?
+            }
+        }
+        else if (line.find("NICK") == 0) {
+            std::string nick = line.substr(5);
+            bool taken = false;
+            for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+                if (it->second->getNick() == nick) {
+                    taken = true;
+                    break;
+                }
+            }
+            if (taken) {
+                client->sendErrorMessage(":server 433 * " + nick + " :Nickname is already in use\r\n");
+            }
+            else {
+                client->setNick(nick);
+                client->sendMsgToClient(client, ":server NOTICE * :Nickname set\r\n");
+            }
+        }
+        else if (line.find("USER") == 0) {
+            std::istringstream parts(line.substr(5));
+            std::string user, mode, unused, realName;
+            parts >> user >> mode >> unused;
+            std::getline(parts, realName);
+            if (!realName.empty() && realName[0] == ':')
+                realName = realName.substr(1);
+            client->setUser(user);
+            client->setRealName(realName);
+            client->sendMsgToClient(client, "server: NOTICE * :User registered\r\n");
+        }
+        else {
+            client->sendErrorMessage(":server 421 " + client->getNick() + " " + line + " :Unknown command\r\n");
+        }
+        if (!client->isAuth() && client->insertedPass() && !client->getNick().empty() && !client->getUser().empty()) {
+            client->setAuth(true);
+            client->sendMsgToClient(client, ":server 001 " + client->getNick() + " :Welcome to the IRC server!\r\n");
+            std::cout << "Client " << client->getNick() << " authenticated successfully." << std::endl;
+        }
     }
 }
