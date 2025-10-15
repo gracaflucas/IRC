@@ -134,7 +134,7 @@ void Server::handleClientMessage(size_t index) {
         if (!c->isAuth())
             tryAuthenticate(c, c->getBuffer());
         else {
-            std::cout << "Message from " << c->getHostname()
+            std::cout << "Message from " << c->getNick()
                       << ": " << c->getBuffer();
         }
         c->clearBuffer();
@@ -155,7 +155,6 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
             }
             else {
                 client->sendErrorMessage(":server 464 * :Password incorrect\r\n");
-                client->sendMsgToClient(client, ":server NOTICE * :Invalid password\r\n");
                 // qual nossa politica para password incorreta? disconnect? tentativas?
             }
         }
@@ -176,16 +175,19 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
                 client->sendMsgToClient(client, ":server NOTICE * :Nickname set\r\n");
             }
         }
-        else if (line.find("USER") == 0) {
+        else if (line.find("USER ") == 0) {
             std::istringstream parts(line.substr(5));
             std::string user, mode, unused, realName;
             parts >> user >> mode >> unused;
             std::getline(parts, realName);
-            if (!realName.empty() && realName[0] == ':')
-                realName = realName.substr(1);
+            if (user.empty() || mode.empty() || unused.empty() || realName.empty() || realName[1] != ':') {
+                client->sendErrorMessage(":server 461 * USER :Not enough parameters\r\n");
+                return;
+            }
+            realName = realName.substr(2);
             client->setUser(user);
             client->setRealName(realName);
-            client->sendMsgToClient(client, "server: NOTICE * :User registered\r\n");
+            client->sendMsgToClient(client, ":server NOTICE * :User registered\r\n");
         }
         else {
             client->sendErrorMessage(":server 421 " + client->getNick() + " " + line + " :Unknown command\r\n");
@@ -197,3 +199,5 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
         }
     }
 }
+
+// implementar a falta de parametros nos commandos ( 461 )
