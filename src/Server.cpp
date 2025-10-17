@@ -200,4 +200,5 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
     }
 }
 
-// implementar a falta de parametros nos commandos ( 461 )
+// faço o trim dos espaços entre commandos e parametros ou ignoro?
+// checar o uso do fcntl
