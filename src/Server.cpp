@@ -176,10 +176,10 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
         }
         else if (line.find("USER ") == 0) {
             std::istringstream parts(line.substr(5));
-            std::string user, mode, unused, realName;
-            parts >> user >> mode >> unused;
+            std::string user, unused1, unused, realName;
+            parts >> user >> unused1 >> unused;
             std::getline(parts, realName);
-            if (user.empty() || mode.empty() || unused.empty() || realName.empty() || realName[1] != ':') {
+            if (user.empty() || unused1.empty() || unused.empty() || realName.empty() || realName[1] != ':') {
                 client->sendErrorMessage(":server 461 * USER :Not enough parameters\r\n");
                 return;
             }
