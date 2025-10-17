@@ -28,7 +28,9 @@ Server::Server(int port, const std::string &password) : _port(port), _serverFd(-
         close(_serverFd);
         throw std::runtime_error("Listen failed.");
     }
-    fcntl(_serverFd, F_SETFL, O_NONBLOCK);
+
+    int flags = fcntl(_serverFd, F_GETFL, 0);
+    fcntl(_serverFd, F_SETFL, flags | O_NONBLOCK);
 
     std::cout << "Server listening on port " << _port << std::endl;
 } 
@@ -45,11 +47,12 @@ Server& Server::operator=(const Server& other) {
         this->_serverFd = -1;
         this->_password = other._password;
         this->_clients.clear();
+        this->_channels.clear();
     }
     return *this;
 }
 
-void    Server::shutdown() {
+void Server::shutdown() {
     for (size_t i = 0; i < _pollfds.size(); ++i) {
         close(_pollfds[i].fd);
     }
@@ -59,6 +62,11 @@ void    Server::shutdown() {
         delete it->second;
     }
     _clients.clear();
+    
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+        delete it->second;
+    }
+    _channels.clear();
 }
 
 void Server::run() {
@@ -90,9 +98,9 @@ void Server::acceptNewClient() {
     socklen_t clientLen = sizeof(clientAddr);
     int clientFd = accept(_serverFd, (sockaddr*)&clientAddr, &clientLen);
     if (clientFd < 0) {
-        throw std::runtime_error("accept");
+        std::cerr << "Warning: accept() failed" << std::endl;
+        return;
     }
-    fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
     std::string hostname = inet_ntoa(clientAddr.sin_addr);
     Client *newClient = new Client(clientFd, hostname);
@@ -114,89 +122,161 @@ void Server::handleClientMessage(size_t index) {
     int bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
 
     if (bytes <= 0) {
-        // disconnect
         close(fd);
         _pollfds.erase(_pollfds.begin() + index);
+        
         std::map<int, Client*>::iterator it = _clients.find(fd);
         if (it != _clients.end()) {
+            std::cout << "Client disconnected: " << it->second->getNick() << std::endl;
             delete it->second;
             _clients.erase(it);
         }
-        std::cout << "Client disconnected." << std::endl;
         return;
     }
+    
     buffer[bytes] = '\0';
     std::map<int, Client*>::iterator it = _clients.find(fd);
-    if (it != _clients.end()) {
-        Client *c = it->second;
-        c->appendBuffer(buffer);
-        if (!c->isAuth())
-            tryAuthenticate(c, c->getBuffer());
-        else {
-            std::cout << "Message from " << c->getNick()
-                      << ": " << c->getBuffer();
+    if (it == _clients.end())
+        return;
+    
+    Client *c = it->second;
+    c->appendBuffer(buffer);
+    
+    std::string &buf = c->getBuffer();
+    size_t pos;
+    while ((pos = buf.find("\r\n")) != std::string::npos) {
+        std::string command = buf.substr(0, pos);
+        buf.erase(0, pos + 2);
+        
+        if (command.empty())
+            continue;
+        
+        if (!c->isAuth()) {
+            tryAuthenticate(c, command);
+        } else {
+            std::istringstream iss(command);
+            std::vector<std::string> cmds;
+            std::string word;
+            
+            while (iss >> word)
+                cmds.push_back(word);
+            
+            if (cmds.empty())
+                continue;
+            
+            if (cmds[0] == "JOIN") {
+                joinCommand(cmds, c);
+            }
+            else {
+                sendResponse(c->getSocket(), ERR_UNKNOWNCOMMAND(c->getNick(), cmds[0]));
+            }
         }
-        c->clearBuffer();
     }
 }
 
 void Server::tryAuthenticate(Client* client, const std::string& msg) {
-    std::istringstream iss(msg);
-    std::string line;
-    while (std::getline(iss, line)) {
-        if (!line.empty() && line[line.size() - 1] == '\r')
-            line.erase(line.size() - 1);
-        if (line.find("PASS") == 0) {
-            std::string pass = line.substr(5);
-            if (pass == _password) {
-                client->setInsertPass(true);
-                client->sendMsgToClient(client, ":server NOTICE * :Password accepted\r\n");
-            }
-            else {
-                client->sendErrorMessage(":server 464 * :Password incorrect\r\n");
-                // qual nossa politica para password incorreta? disconnect? tentativas?
+    std::string line = msg;
+    
+    if (!line.empty() && line[line.size() - 1] == '\r')
+        line.erase(line.size() - 1);
+    
+    if (line.find("PASS ") == 0) {
+        std::string pass = line.substr(5);
+        if (pass == _password) {
+            client->setInsertPass(true);
+            sendResponse(client->getSocket(), ":server NOTICE * :Password accepted\r\n");
+        } else {
+            sendResponse(client->getSocket(), ERR_PASSWDMISMATCH("*"));
+        }
+    }
+    else if (line.find("NICK ") == 0) {
+        std::string nick = line.substr(5);
+        
+        if (nick.empty()) {
+            sendResponse(client->getSocket(), ERR_NONICKNAMEGIVEN("*"));
+            return;
+        }
+        
+        bool taken = false;
+        for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+            if (it->second->getNick() == nick) {
+                taken = true;
+                break;
             }
         }
-        else if (line.find("NICK") == 0) {
-            std::string nick = line.substr(5);
-            bool taken = false;
-            for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-                if (it->second->getNick() == nick) {
-                    taken = true;
-                    break;
-                }
-            }
-            if (taken) {
-                client->sendErrorMessage(":server 433 * " + nick + " :Nickname is already in use\r\n");
-            }
-            else {
-                client->setNick(nick);
-                client->sendMsgToClient(client, ":server NOTICE * :Nickname set\r\n");
-            }
+        
+        if (taken) {
+            sendResponse(client->getSocket(), ERR_NICKNAMEINUSE("*", nick));
+        } else {
+            client->setNick(nick);
+            sendResponse(client->getSocket(), ":server NOTICE * :Nickname set\r\n");
         }
-        else if (line.find("USER ") == 0) {
-            std::istringstream parts(line.substr(5));
-            std::string user, unused1, unused, realName;
-            parts >> user >> unused1 >> unused;
-            std::getline(parts, realName);
-            if (user.empty() || unused1.empty() || unused.empty() || realName.empty() || realName[1] != ':') {
-                client->sendErrorMessage(":server 461 * USER :Not enough parameters\r\n");
-                return;
-            }
-            realName = realName.substr(2);
-            client->setUser(user);
-            client->setRealName(realName);
-            client->sendMsgToClient(client, ":server NOTICE * :User registered\r\n");
+    }
+    else if (line.find("USER ") == 0) {
+        std::istringstream parts(line.substr(5));
+        std::string user, mode, unused, realName;
+        parts >> user >> mode >> unused;
+        std::getline(parts, realName);
+        
+        if (user.empty() || mode.empty() || unused.empty() || realName.empty() || 
+            realName.length() < 2 || realName[1] != ':') {
+            sendResponse(client->getSocket(), ERR_NEEDMOREPARAMS("*", "USER"));
+            return;
         }
-        else {
-            client->sendErrorMessage(":server 421 " + client->getNick() + " " + line + " :Unknown command\r\n");
-        }
-        if (!client->isAuth() && client->insertedPass() && !client->getNick().empty() && !client->getUser().empty()) {
-            client->setAuth(true);
-            client->sendMsgToClient(client, ":server 001 " + client->getNick() + " :Welcome to the IRC server!\r\n");
-            std::cout << "Client " << client->getNick() << " authenticated successfully." << std::endl;
-        }
+        
+        realName = realName.substr(2);
+        client->setUser(user);
+        client->setRealName(realName);
+        sendResponse(client->getSocket(), ":server NOTICE * :User registered\r\n");
+    }
+    else {
+        std::string cmd = line.substr(0, line.find(' '));
+        std::string nick = client->getNick().empty() ? "*" : client->getNick();
+        sendResponse(client->getSocket(), ERR_UNKNOWNCOMMAND(nick, cmd));
+    }
+    
+    if (!client->isAuth() && client->insertedPass() && 
+        !client->getNick().empty() && !client->getUser().empty()) {
+        client->setAuth(true);
+        sendResponse(client->getSocket(), RPL_WELCOME(client->getNick()));
+        std::cout << "Client " << client->getNick() << " authenticated successfully." << std::endl;
     }
 }
 
-// faço o trim dos espaços entre commandos e parametros ou ignoro?
+Channel* Server::getChannelByName(const std::string &name) {
+    std::map<std::string, Channel*>::iterator it = _channels.find(name);
+    if (it != _channels.end())
+        return it->second;
+    return NULL;
+}
+
+Client* Server::getClientBySocket(int socket) {
+    std::map<int, Client*>::iterator it = _clients.find(socket);
+    if (it != _clients.end())
+        return it->second;
+    return NULL;
+}
+
+void Server::showNames(Channel *channel, Client *client) {
+    std::string names;
+    std::vector<int> clients = channel->getClients();
+    
+    for (std::vector<int>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        Client *cl = this->getClientBySocket(*it);
+        if (!cl)
+            continue;
+        
+        if (cl->isChannelAdmin(channel))
+            names += "@";
+        
+        names += cl->getNick();
+        
+        if (it != clients.end() - 1)
+            names += " ";
+    }
+    
+    sendResponse(client->getSocket(), RPL_NAMREPLY(client->getNick(), channel->getName(), names));
+    sendResponse(client->getSocket(), RPL_ENDOFNAMES(client->getNick(), channel->getName()));
+}
+
+>>>>>>> 26388e9810ec29f8c3fd0f5d68da53c70d1bd55d

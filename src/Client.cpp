@@ -112,3 +112,29 @@ bool	Client::isChannelAdmin(Channel *channel) {
 		return true;
 	return false;
 }
+
+bool Client::isChannelMember(Channel *channel) {
+    std::vector<Channel*>::iterator it = std::find(
+        _channels.begin(), 
+        _channels.end(), 
+        channel
+    );
+    return (it != _channels.end());
+}
+
+bool Client::isChannelInvited(Channel *channel) {
+    std::vector<int> &invites = channel->getChannelInvites();
+    std::vector<int>::iterator it = std::find(
+        invites.begin(), 
+        invites.end(), 
+        _socket
+    );
+    return (it != invites.end());
+}
+
+void Client::sendToAllChannel(Channel *channel, const std::string &msg) {
+    std::vector<int> &clients = channel->getClients();
+    for (std::vector<int>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        send(*it, msg.c_str(), msg.length(), 0);
+    }
+}
