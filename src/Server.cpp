@@ -278,3 +278,4 @@ void Server::showNames(Channel *channel, Client *client) {
     sendResponse(client->getSocket(), RPL_NAMREPLY(client->getNick(), channel->getName(), names));
     sendResponse(client->getSocket(), RPL_ENDOFNAMES(client->getNick(), channel->getName()));
 }
+
