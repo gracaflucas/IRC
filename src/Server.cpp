@@ -28,9 +28,7 @@ Server::Server(int port, const std::string &password) : _port(port), _serverFd(-
         close(_serverFd);
         throw std::runtime_error("Listen failed.");
     }
-
-    int flags = fcntl(_serverFd, F_GETFL, 0);
-    fcntl(_serverFd, F_SETFL, flags | O_NONBLOCK);
+    fcntl(_serverFd, F_SETFL, O_NONBLOCK);
 
     std::cout << "Server listening on port " << _port << std::endl;
 } 
@@ -101,6 +99,7 @@ void Server::acceptNewClient() {
         std::cerr << "Warning: accept() failed" << std::endl;
         return;
     }
+    fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
     std::string hostname = inet_ntoa(clientAddr.sin_addr);
     Client *newClient = new Client(clientFd, hostname);
@@ -214,11 +213,11 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
     }
     else if (line.find("USER ") == 0) {
         std::istringstream parts(line.substr(5));
-        std::string user, mode, unused, realName;
-        parts >> user >> mode >> unused;
+        std::string user, unused1, unused, realName;
+        parts >> user >> unused1 >> unused;
         std::getline(parts, realName);
         
-        if (user.empty() || mode.empty() || unused.empty() || realName.empty() || 
+        if (user.empty() || unused1.empty() || unused.empty() || realName.empty() || 
             realName.length() < 2 || realName[1] != ':') {
             sendResponse(client->getSocket(), ERR_NEEDMOREPARAMS("*", "USER"));
             return;
@@ -278,5 +277,3 @@ void Server::showNames(Channel *channel, Client *client) {
     sendResponse(client->getSocket(), RPL_NAMREPLY(client->getNick(), channel->getName(), names));
     sendResponse(client->getSocket(), RPL_ENDOFNAMES(client->getNick(), channel->getName()));
 }
-
->>>>>>> 26388e9810ec29f8c3fd0f5d68da53c70d1bd55d
