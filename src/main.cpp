@@ -11,7 +11,6 @@
 #include "../include/Server.hpp"
 #include "../include/utils.hpp"
 
-// Global server pointer - needed for signal handler access
 static Server *g_server = NULL;
 
 /*
@@ -26,9 +25,7 @@ static volatile sig_atomic_t g_shutdown_requested = 0;
  * Must be async-signal-safe - only certain operations allowed
  */
 static void handleSignal(int signal) {
-    (void)signal;  // Avoid unused parameter warning
-    
-    // Second signal = force exit
+    (void)signal;
     if (g_shutdown_requested) {
         std::cout << "\nForce shutdown...\n" << std::endl;
         std::exit(1);
@@ -107,33 +104,21 @@ static void printBanner(int port, const std::string &password) {
     std::cout << "Press Ctrl+C to shutdown\n" << std::endl;
 }
 
-/**
- * Main entry point
- */
 int main(int argc, char **argv) {
-    // Validate argument count
     if (argc != 3) {
         printUsage(argv[0]);
         return 1;
     }
-    
-    // Setup signal handlers before anything else
     setupSignalHandlers();
-    
     try {
         // Parse and validate command-line arguments
         int port = parsePort(argv[1]);
         std::string password = parsePassword(argv[2]);
-        
-        // Show startup information
         printBanner(port, password);
-        
         // Create server instance
         g_server = new Server(port, password);
-        
         // Start server main loop (blocks until shutdown)
         g_server->run();
-        
     } catch (const std::invalid_argument &e) {
         // Invalid port or password format
         std::cerr << "\n[ERROR] Invalid argument: " << e.what() << std::endl;
@@ -143,7 +128,6 @@ int main(int argc, char **argv) {
             g_server = NULL;
         }
         return 1;
-        
     } catch (const std::out_of_range &e) {
         // Port number out of valid range
         std::cerr << "\n[ERROR] Value out of range: " << e.what() << std::endl;
@@ -153,7 +137,6 @@ int main(int argc, char **argv) {
             g_server = NULL;
         }
         return 1;
-        
     } catch (const std::runtime_error &e) {
         // Socket creation, bind, listen failures
         std::cerr << "\n[ERROR] Runtime error: " << e.what() << std::endl;
@@ -162,7 +145,6 @@ int main(int argc, char **argv) {
             g_server = NULL;
         }
         return 1;
-        
     } catch (const std::exception &e) {
         // Catch any other standard exceptions
         std::cerr << "\n[ERROR] Unexpected error: " << e.what() << std::endl;
@@ -171,7 +153,6 @@ int main(int argc, char **argv) {
             g_server = NULL;
         }
         return 1;
-        
     } catch (...) {
         // Catch-all for non-standard exceptions
         std::cerr << "\n[ERROR] Unknown error occurred" << std::endl;
@@ -181,7 +162,6 @@ int main(int argc, char **argv) {
         }
         return 1;
     }
-    
     // Normal shutdown path (rarely reached due to signal handling)
     std::cout << "\n==================================" << std::endl;
     std::cout << "Server shutdown complete" << std::endl;
@@ -191,6 +171,5 @@ int main(int argc, char **argv) {
         delete g_server;
         g_server = NULL;
     }
-    
     return 0;
 }

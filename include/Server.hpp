@@ -47,10 +47,8 @@ class Server {
         void        shutdown();
         void        tryAuthenticate(Client* client, const std::string& msg);
         
-        // Command handlers
         void        joinCommand(std::vector<std::string> &cmds, Client *client);
         
-        // Helper methods
         Channel*    getChannelByName(const std::string &name);
         Client*     getClientBySocket(int socket);
         void        showNames(Channel *channel, Client *client);
