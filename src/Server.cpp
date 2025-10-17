@@ -28,9 +28,7 @@ Server::Server(int port, const std::string &password) : _port(port), _serverFd(-
         close(_serverFd);
         throw std::runtime_error("Listen failed.");
     }
-
-    int flags = fcntl(_serverFd, F_GETFL, 0);
-    fcntl(_serverFd, F_SETFL, flags | O_NONBLOCK);
+    fcntl(_serverFd, F_SETFL, O_NONBLOCK);
 
     std::cout << "Server listening on port " << _port << std::endl;
 } 
@@ -94,6 +92,7 @@ void Server::acceptNewClient() {
     if (clientFd < 0) {
         throw std::runtime_error("accept");
     }
+    fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
     std::string hostname = inet_ntoa(clientAddr.sin_addr);
     Client *newClient = new Client(clientFd, hostname);
@@ -201,4 +200,3 @@ void Server::tryAuthenticate(Client* client, const std::string& msg) {
 }
 
 // faço o trim dos espaços entre commandos e parametros ou ignoro?
-// checar o uso do fcntl
