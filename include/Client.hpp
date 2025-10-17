@@ -78,9 +78,11 @@ class Client
 		void setUser(const std::string &user);
 		void setRealName(const std::string &realName);
 
-		// Buffer
 		void appendBuffer(const std::string &str);
 		void clearBuffer();
+		bool    isChannelMember(Channel *channel);
+    	bool    isChannelInvited(Channel *channel);
+    	void    sendToAllChannel(Channel *channel, const std::string &msg);
 		
 		// Comunicação
 		void	sendErrorMessage(const std::string &msg);
