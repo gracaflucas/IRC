@@ -46,12 +46,15 @@ class Server {
         void        handleClientMessage(size_t index);
         void        shutdown();
         void        tryAuthenticate(Client* client, const std::string& msg);
-        
+		
+		void 		partCommand(std::vector<std::string> &cmds, Client *client);
         void        joinCommand(std::vector<std::string> &cmds, Client *client);
+    	void		privmsgCommand(std::vector<std::string> &cmds, Client *client);
         
         Channel*    getChannelByName(const std::string &name);
         Client*     getClientBySocket(int socket);
-        void        showNames(Channel *channel, Client *client);
-};
+		Client* 	getClientByNick(const std::string& nick);
+		void        showNames(Channel *channel, Client *client);
+	};
 
 #endif

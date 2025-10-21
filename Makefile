@@ -10,7 +10,9 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/Client.cpp \
 			  $(SRC_DIR)/Channel.cpp \
 			  $(SRC_DIR)/utils.cpp \
-			  $(CMD_DIR)/Join.cpp
+			  $(CMD_DIR)/Join.cpp \
+			  $(CMD_DIR)/Privmsg.cpp \
+			  $(CMD_DIR)/Part.cpp \
 
 OBJS		= $(SRCS:.cpp=.o)
 

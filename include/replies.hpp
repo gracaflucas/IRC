@@ -148,4 +148,12 @@
 #define ERR_CHANOPRIVSNEEDED(nick, channel) \
     (std::string(":server 482 ") + nick + " " + channel + " :You're not channel operator\r\n")
 
+// 411 ERR_NORECIPIENT (add this after 482)
+#define ERR_NORECIPIENT(nick, command) \
+    (std::string(":server 411 ") + nick + " :No recipient given (" + command + ")\r\n")
+
+// 412 ERR_NOTEXTTOSEND (add this after 411)
+#define ERR_NOTEXTTOSEND(nick) \
+    (std::string(":server 412 ") + nick + " :No text to send\r\n")
+
 #endif

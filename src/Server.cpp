@@ -166,6 +166,12 @@ void Server::handleClientMessage(size_t index) {
             if (cmds[0] == "JOIN") {
                 joinCommand(cmds, c);
             }
+			else if (cmds[0] == "PRIVMSG") {  //ADDED
+    			privmsgCommand(cmds, c);
+			}
+			else if (cmds[0] == "PART") {//added
+				partCommand(cmds, c);
+			}
             else {
                 sendResponse(c->getSocket(), ERR_UNKNOWNCOMMAND(c->getNick(), cmds[0]));
             }
@@ -276,4 +282,12 @@ void Server::showNames(Channel *channel, Client *client) {
     
     sendResponse(client->getSocket(), RPL_NAMREPLY(client->getNick(), channel->getName(), names));
     sendResponse(client->getSocket(), RPL_ENDOFNAMES(client->getNick(), channel->getName()));
+}
+
+Client* Server::getClientByNick(const std::string& nick) {
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if (it->second->getNick() == nick)
+            return it->second;
+    }
+    return NULL;
 }
