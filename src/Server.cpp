@@ -159,10 +159,8 @@ void Server::handleClientMessage(size_t index) {
             
             while (iss >> word)
                 cmds.push_back(word);
-            
             if (cmds.empty())
                 continue;
-            
             if (cmds[0] == "JOIN") {
                 joinCommand(cmds, c);
             }
