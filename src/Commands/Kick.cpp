@@ -38,9 +38,11 @@ void Server::kickCommand(std::vector<std::string> &params, Client* kicker) {
 }
 
 void Server::broadcastToChannel(Channel *channel, const std::string &message) {
+    if (!channel)
+        return;
     std::vector<int> clients = channel->getClients();
-    for (std::vector<int>::iterator it = clients.begin(); it != clients.end(); ++it) {
-        Client *c = getClientBySocket(*it);
+    for (std::vector<int>::size_type i = 0; i < clients.size(); ++i) {
+        Client *c = getClientBySocket(clients[i]);
         if (c)
             sendResponse(c->getSocket(), message);
     }
