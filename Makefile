@@ -15,6 +15,7 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(CMD_DIR)/Part.cpp \
 			  $(CMD_DIR)/Kick.cpp \
 			  $(CMD_DIR)/Invite.cpp \
+			  $(CMD_DIR)/Mode.cpp \
 
 OBJS		= $(SRCS:.cpp=.o)
 

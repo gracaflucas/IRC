@@ -33,6 +33,6 @@ void Server::inviteCommand(const std::vector<std::string>& cmd, Client *inviter)
 
     channel->addChannelInvite(target);
     sendResponse(inviter->getSocket(), RPL_INVITING(inviter->getNick(), targetNick, channelName));
-    std::string inviteMsg = ":" + inviter->getNick() + "!" + inviter->getUser() + "@localhost INVITE " + targetNick + " :" + channelName + "\r\n";
+    std::string inviteMsg = ":" + inviter->getPrefix() + " INVITE " + targetNick + " :" + channelName + "\r\n";
     sendResponse(target->getSocket(), inviteMsg);
 }

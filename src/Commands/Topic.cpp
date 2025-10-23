@@ -3,6 +3,8 @@
 // tentar topic com multiplas palavras depois do :
 // checar se ha algum topico quando o user pede, e nao ha topico
 #include "../../include/Server.hpp"
+#include <ctime>
+#include <sstream>
 
 static std::string joinParams(const std::vector<std::string>& params, size_t start) {
     std::string result;
@@ -29,24 +31,26 @@ void Server::topicCommand(std::vector<std::string> &cmds, Client *client) {
         return;
     }
     if (cmds.size() == 2) {
-        std::string topic = channel->getTopic();
+        std::string topic = channel->getTopic(0);
         if (topic.empty()) {
             sendResponse(client->getSocket(), RPL_NOTOPIC(client->getNick(), channelName));
         } else {
             sendResponse(client->getSocket(), RPL_TOPIC(client->getNick(), channelName, topic));
         }
         return;
-    } else {
-        if (channel->getTopicRestricted() && !client->isChannelAdmin(channel)) {
-            sendResponse(client->getSocket(), ERR_CHANOPRIVSNEEDED(client->getNick(), channelName));
-            return;
-        }
-        std::string newTopic = joinParams(cmds, 2);
-        if (!newTopic.empty() && newTopic[0] == ':') {
-            newTopic = newTopic.substr(1);
-        }
-        channel->setTopic(newTopic);
-        std::string msg = ":" + client->getNick() + "!" + client->getUser() + "@localhost TOPIC " + channelName + " :" + newTopic + "\r\n";
-        broadcastToChannel(channel, msg);
     }
+    if (channel->getTopicRestricted() && !client->isChannelAdmin(channel)) {
+        sendResponse(client->getSocket(), ERR_CHANOPRIVSNEEDED(client->getNick(), channelName));
+        return;
+    }
+    std::string newTopic = joinParams(cmds, 2);
+    if (!newTopic.empty() && newTopic[0] == ':') {
+        newTopic = newTopic.substr(1);
+    }
+    std::time_t now = std::time(0);
+    std::ostringstream timeStr;
+    timeStr << now;
+    channel->setTopic(newTopic, client->getNick(), timeStr.str());
+    std::string msg = ":" + client->getPrefix() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+    broadcastToChannel(channel, msg);
 }
