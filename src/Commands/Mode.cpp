@@ -153,33 +153,29 @@ void Server::modeCommand(std::vector<std::string> &cmds, Client *client) {
                 }
                 break;
             case 'l': // User limit
-                if (adding) {
-                    if (paramIndex >= cmds.size()) {
-                        sendResponse(client->getSocket(), ERR_NEEDMOREPARAMS(client->getNick(), "MODE +l"));
-                        continue;
-                    }
-                    std::string limitStr = cmds[paramIndex++];
-                    if (!isPositiveNumber(limitStr)) {
-                        continue;
-                    }
-                    int limit = std::atoi(limitStr.c_str());
-                    if (limit <= 0) {
-                        continue;
-                    }
-                    channel->setUserLimit(limit);
-                    appliedModes += "+l";
-                    appliedParams += " " + limitStr;
-                    std::cout << "[MODE] " << channelName << " +l " << limit << " (user limit) by " << client->getNick() << std::endl;
-                    channel->setUserLimit(-1);
-                    appliedModes += "-l";
-                    std::cout << "[MODE] " << channelName << " -l (limit removed) by " << client->getNick() << std::endl;
-                }
-                break;
-            default:
-                // Unknown mode flag
-                std::string unknownMode(1, mode);
-                sendResponse(client->getSocket(), ":server 472 " + client->getNick() + " " + unknownMode + " :is unknown mode char to me\r\n");
-                break;
+				if (adding) {
+					if (paramIndex >= cmds.size()) {
+						sendResponse(client->getSocket(), ERR_NEEDMOREPARAMS(client->getNick(), "MODE +l"));
+						continue;
+					}
+					std::string limitStr = cmds[paramIndex++];
+					if (!isPositiveNumber(limitStr)) {
+						continue;
+					}
+					int limit = std::atoi(limitStr.c_str());
+					if (limit <= 0) {
+						continue;
+					}
+					channel->setUserLimit(limit);
+					appliedModes += "+l";
+					appliedParams += " " + limitStr;
+					std::cout << "[MODE] " << channelName << " +l " << limit << " (user limit) by " << client->getNick() << std::endl;
+				} else {
+					channel->setUserLimit(-1);
+					appliedModes += "-l";
+					std::cout << "[MODE] " << channelName << " -l (limit removed) by " << client->getNick() << std::endl;
+				}
+				break;
         }
     }
     // Broadcast MODE change to all channel members
