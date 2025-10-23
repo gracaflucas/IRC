@@ -11,6 +11,8 @@
 #include "../include/Server.hpp"
 #include "../include/utils.hpp"
 
+//ft_irc Internet Relay Chat
+
 static Server *g_server = NULL;
 
 /*
