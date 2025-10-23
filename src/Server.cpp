@@ -170,6 +170,12 @@ void Server::handleClientMessage(size_t index) {
 			else if (cmds[0] == "PART") {//added
 				partCommand(cmds, c);
 			}
+            else if (cmds[0] == "INVITE") {
+                inviteCommand(cmds, c);
+            }
+            else if (cmds[0] == "KICK") {
+                kickCommand(cmds, c);
+            }
             else {
                 sendResponse(c->getSocket(), ERR_UNKNOWNCOMMAND(c->getNick(), cmds[0]));
             }

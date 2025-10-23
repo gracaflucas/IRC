@@ -50,11 +50,14 @@ class Server {
 		void 		partCommand(std::vector<std::string> &cmds, Client *client);
         void        joinCommand(std::vector<std::string> &cmds, Client *client);
     	void		privmsgCommand(std::vector<std::string> &cmds, Client *client);
+        void        inviteCommand(const std::vector<std::string>& cmd, Client *inviter);
+        void        kickCommand(std::vector<std::string> &params, Client* kicker);
         
         Channel*    getChannelByName(const std::string &name);
         Client*     getClientBySocket(int socket);
 		Client* 	getClientByNick(const std::string& nick);
 		void        showNames(Channel *channel, Client *client);
+        void        broadcastToChannel(Channel *channel, const std::string &message);
 	};
 
 #endif
