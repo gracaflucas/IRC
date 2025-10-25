@@ -163,6 +163,9 @@ void Server::handleClientMessage(size_t index) {
 			else if (cmds[0] == "MODE") {
 				modeCommand(cmds, c);
 			}
+            else if (cmds[0] == "TOPIC") {
+                topicCommand(cmds, c);
+            }
             else {
                 sendResponse(c->getSocket(), ERR_UNKNOWNCOMMAND(c->getNick(), cmds[0]));
             }
