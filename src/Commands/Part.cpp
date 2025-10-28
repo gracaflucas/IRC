@@ -66,9 +66,20 @@ void Server::partCommand(std::vector<std::string> &cmds, Client *client) {
         if (channel->getClients().empty()) {
             std::map<std::string, Channel*>::iterator chanIt = _channels.find(channelName);
             if (chanIt != _channels.end()) {
-                delete chanIt->second;
-                _channels.erase(chanIt);
-                std::cout << "[CHANNEL] " << channelName << " deleted (empty)" << std::endl;
+                Channel* emptyChannel = chanIt->second;
+                for (std::map<int, Client*>::iterator cIt = _clients.begin(); cIt != _clients.end(); ++cIt) {
+                    Client *c = cIt->second;
+                    std::vector<Channel*> &chs = c->getChannels();
+                    for (std::vector<Channel*>::iterator itCh = chs.begin(); itCh != chs.end();) {
+                        if (*itCh == emptyChannel)
+                            itCh = chs.erase(itCh);
+                        else
+                            ++itCh;
+                    }
+                }
+            delete emptyChannel;
+            _channels.erase(chanIt);
+            std::cout << "[CHANNEL] " << channelName << " deleted (empty)" << std::endl;
             }
         }
     }
